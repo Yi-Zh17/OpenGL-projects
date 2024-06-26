@@ -34,14 +34,10 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-////////////////////////////////////////////////////////////////////////////
+//** Lighting */
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
-//** Camera */
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 ////////////////////////////////////////////////////////////////////////////
-
 
 int main()
 {
@@ -129,23 +125,8 @@ int main()
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
 
-    glm::vec3 cubePositions[] = {
-    glm::vec3( 0.0f,  0.0f,  0.0f), 
-    glm::vec3( 2.0f,  5.0f, -15.0f), 
-    glm::vec3(-1.5f, -2.2f, -2.5f),  
-    glm::vec3(-3.8f, -2.0f, -12.3f),  
-    glm::vec3( 2.4f, -0.4f, -3.5f),  
-    glm::vec3(-1.7f,  3.0f, -7.5f),  
-    glm::vec3( 1.3f, -2.0f, -2.5f),  
-    glm::vec3( 1.5f,  2.0f, -2.5f), 
-    glm::vec3( 1.5f,  0.2f, -1.5f), 
-    glm::vec3(-1.3f,  1.0f, -1.5f)  
-    };
-
-
-    unsigned int VAO, VBO, lightVAO;
+    unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
-    glGenVertexArrays(1, &lightVAO);
     glGenBuffers(1, &VBO);
     
     glBindVertexArray(VAO);
@@ -156,16 +137,15 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    unsigned int lightVAO;
+    glGenVertexArrays(1, &lightVAO);
+    glBindVertexArray(lightVAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    glBindVertexArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3* sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
-    lightingShader.use();
-    lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
-    lightingShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
     ////////////////////////////////////////////////////////////////////////////
 
     
@@ -186,30 +166,36 @@ int main()
 
         // Use shader context
         lightingShader.use();
+        lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+        lightingShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 
         //** Transformations */
         // Camera
         glm::mat4 view = camera.GetViewMatrix();
-
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT,
                                                  0.1f, 100.0f);
 
         shader.setMatrix4f("view", view);
         shader.setMatrix4f("projection", projection);
+        
+        glm::mat4 model = glm::mat4(1.0f);
+        shader.setMatrix4f("model", model);
 
         // Bind VAO and start drawing
         glBindVertexArray(VAO);
-        for(unsigned int i = 0; i < 10; i++)
-        {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
-            model = glm::rotate(model, glm::radians(50.0f),
-                                glm::vec3(0.5f, 1.0f, 0.0f));
-            shader.setMatrix4f("model", model);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-    
-        //glBindVertexArray(0);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        lightingShader.use();
+        lightingShader.setMatrix4f("projection", projection);
+        lightingShader.setMatrix4f("view", view);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPos);
+        model = glm::scale(model, glm::vec3(0.2f));
+        lightingShader.setMatrix4f("model", model);
+
+        glBindVertexArray(lightVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -254,7 +240,6 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 
     // Camera
-    const float cameraSpeed = 5.0f * deltaTime;
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.processKeyboard(FORWARD, deltaTime);
     if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
