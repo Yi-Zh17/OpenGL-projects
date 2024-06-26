@@ -75,8 +75,8 @@ int main()
 
 
     //** Shader Compilation */
-    Shader lightingShader("shader/vertex_light.vs", "shader/fragment_light.fs");
-    Shader shader("shader/vertex_obj.vs", "shader/fragment_obj.vs");
+    Shader lightingShader("shader/vertLight.vs", "shader/fragLight.fs");
+    Shader shader("shader/vertObj.vs", "shader/fragObj.vs");
     ////////////////////////////////////////////////////////////////////////////
 
 
