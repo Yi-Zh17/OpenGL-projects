@@ -34,8 +34,8 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-//** Lighting */
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+//** Fixed position for light source */
+//glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -181,6 +181,7 @@ int main()
         shader.setMatrix4f("view", view);
         shader.setMatrix4f("projection", projection);
         
+        glm::vec3 lightPos(sin(2 * (float)glfwGetTime()), 2 * cos((float)glfwGetTime()), 2 * (sin((float)(glfwGetTime()))));
         glm::mat4 model = glm::mat4(1.0f);
         shader.setMatrix4f("model", model);
         shader.setVec3("lightPos", lightPos);
@@ -195,6 +196,7 @@ int main()
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightPos);
         model = glm::scale(model, glm::vec3(0.2f));
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
         lightingShader.setMatrix4f("model", model);
         
 
